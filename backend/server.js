@@ -62,6 +62,12 @@ connectCloudinary();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Normalize double slashes in URLs (e.g. //api/login -> /api/login)
+app.use((req, res, next) => {
+  req.url = req.url.replace(/\/\/+/g, '/');
+  next();
+});
+
 // Dynamic CORS configuration
 const allowedOrigins = [
   process.env.FRONTEND_URL, 

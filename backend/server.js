@@ -50,7 +50,7 @@ const port = process.env.PORT || 4000;
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
-    origin: '*',
+    origin: (process.env.NODE_ENV === 'production' && process.env.FRONTEND_URL) ? process.env.FRONTEND_URL : '*',
     methods: ['GET', 'POST']
   }
 });
@@ -62,7 +62,26 @@ connectCloudinary();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors());
+// Dynamic CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL, 
+  process.env.ADMIN_URL,
+  'http://localhost:5173',
+  'http://localhost:5174'
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 // Routes
 app.use('/api/admin', adminRouter);
